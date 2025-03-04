@@ -1,40 +1,44 @@
 # DESCRIÇÃO TECNICA DA TAREFA 1, COLOQUEI A EXPLICAÇÃO DO PROJETO EM DESCRIPTION
 # Provider AWS
+```terraform
 provider "aws" {
   region = "us-east-1"
 }
-
+```
 # Variáveis
+## as variaveis referente ao projeto
+```terraform
 variable "projeto" {
   description = "Nome do Projeto. O valor padrão é VExpenses."
   type        = string
   default     = "VExpenses"
 }
+```
 
 variable "candidato" {
   description = "Nome do Candidato. O valor padrão é Emanuel Neemias Nerys Frutuoso."
   type        = string
   default     = "Emanuel Neemias Nerys Frutuoso"
 }
-
+.
 variable "cidr_vpc" {
   description = "CIDR block da VPC. O valor padrão é 10.0.0.0/16."
   type        = string
   default     = "10.0.0.0/16"
 }
-
+## CIDR block da Subnet. O valor padrão é 10.0.1.0/24.
 variable "cidr_subnet" {
   description = "CIDR block da Subnet. O valor padrão é 10.0.1.0/24."
   type        = string
   default     = "10.0.1.0/24"
 }
-
+## Zona de Disponibilidade. O valor padrão é us-east-1a.
 variable "zone" {
   description = "Zona de Disponibilidade. O valor padrão é us-east-1a."
   type        = string
   default     = "us-east-1a"
 }
-
+## IP autorizado para SSH (Exemplo: 0.0.0.0/0 para permitir qualquer IP). O valor padrão é 0.0.0.0/0.
 variable "ssh_allowed_ip" {
   description = "IP autorizado para SSH (Exemplo: 0.0.0.0/0 para permitir qualquer IP). O valor padrão é 0.0.0.0/0."
   type        = string
@@ -42,20 +46,27 @@ variable "ssh_allowed_ip" {
 }
 
 # Gerando chave privada RSA
+## Gera uma chave privada RSA para ser usada no acesso SSH à instância EC2
+```terraform
 resource "tls_private_key" "ec2_key" {
   description = "Gera uma chave privada RSA para ser usada no acesso SSH à instância EC2."
   algorithm = "RSA"
   rsa_bits  = 2048
-}
+} 
+```
 
 # Criando o par de chaves para a EC2
+```terraform
 resource "aws_key_pair" "ec2_key_pair" {
   description = "Cria um par de chaves para a EC2, utilizando a chave pública gerada anteriormente."
   key_name   = "${var.projeto}-${var.candidato}-key"
   public_key = tls_private_key.ec2_key.public_key_openssh
 }
+```
 
 # Criando a VPC
+## Cria uma Virtual Private Cloud (VPC) com suporte a DNS e resolução de nomes de host.
+```terraform
 resource "aws_vpc" "main_vpc" {
   description = "Cria uma Virtual Private Cloud (VPC) com suporte a DNS e resolução de nomes de host."
   cidr_block           = var.cidr_vpc
@@ -66,8 +77,11 @@ resource "aws_vpc" "main_vpc" {
     Name = "${var.projeto}-${var.candidato}-vpc"
   }
 }
+```
 
 # Criando a Subnet
+## Cria uma Subnet dentro da VPC, associada à zona de disponibilidade configurada.
+```terraform
 resource "aws_subnet" "main_subnet" {
   description = "Cria uma Subnet dentro da VPC, associada à zona de disponibilidade configurada."
   vpc_id            = aws_vpc.main_vpc.id
@@ -78,18 +92,22 @@ resource "aws_subnet" "main_subnet" {
     Name = "${var.projeto}-${var.candidato}-subnet"
   }
 }
-
+```
 # Criando o Internet Gateway (IGW)
+## Cria um gateway de intrnet para a VPC, permitindo comunicação com a internet.
+```terraform
 resource "aws_internet_gateway" "main_igw" {
-  description = "Cria um gateway de internet para a VPC, permitindo comunicação com a internet."
+  description = "Cria um gateway de intrnet para a VPC, permitindo comunicação com a internet."
   vpc_id = aws_vpc.main_vpc.id
 
   tags = {
     Name = "${var.projeto}-${var.candidato}-igw"
   }
 }
-
+```
 # Criando a Tabela de Roteamento
+## Cria uma tabela de roteamento que define como o tráfego será roteado dentro da VPC.
+```terraform
 resource "aws_route_table" "main_route_table" {
   description = "Cria uma tabela de roteamento que define como o tráfego será roteado dentro da VPC."
   vpc_id = aws_vpc.main_vpc.id
@@ -103,22 +121,28 @@ resource "aws_route_table" "main_route_table" {
     Name = "${var.projeto}-${var.candidato}-route_table"
   }
 }
-
+```
 # Associando a Tabela de Roteamento à Subnet
+## Associa a tabela de roteamento à subnet, garantindo que o tráfego seja roteado corretamente.
+```terraform
 resource "aws_route_table_association" "main_association" {
   description = "Associa a tabela de roteamento à subnet, garantindo que o tráfego seja roteado corretamente."
   subnet_id      = aws_subnet.main_subnet.id
   route_table_id = aws_route_table.main_route_table.id
 }
-
+```
 # Criando o Security Group
+## Cria um grupo de segurança que permite SSH do IP autorizado e todo o tráfego de saída.
+```terraform
 resource "aws_security_group" "main_sg" {
   description = "Cria um grupo de segurança que permite SSH do IP autorizado e todo o tráfego de saída."
   name        = "${var.projeto}-${var.candidato}-sg"
   description = "Permitir SSH do IP específico e todo o tráfego de saída"
   vpc_id      = aws_vpc.main_vpc.id
+```
 
   # Regras de entrada: SSH restrito ao IP configurado
+  ```terraform
   ingress {
     description      = "Allow SSH from any IP"
     from_port        = 22
@@ -127,8 +151,9 @@ resource "aws_security_group" "main_sg" {
     cidr_blocks      = [var.ssh_allowed_ip]
     ipv6_cidr_blocks = ["::/0"]
   }
-
+```
   # Regras de saída: Permitir todo tráfego de saída
+  ```terraform
   egress {
     description      = "Allow all outbound traffic"
     from_port        = 0
@@ -142,8 +167,11 @@ resource "aws_security_group" "main_sg" {
     Name = "${var.projeto}-${var.candidato}-sg"
   }
 }
+```
 
 # Buscando a AMI mais recente do Debian 12
+## Busca a AMI mais recente do Debian 12, para ser utilizada na criação da instância EC2.
+```terraform
 data "aws_ami" "debian12" {
   description = "Busca a AMI mais recente do Debian 12, para ser utilizada na criação da instância EC2."
   most_recent = true
@@ -160,8 +188,10 @@ data "aws_ami" "debian12" {
 
   owners = ["679593333241"]
 }
-
+```
 # Criando a Instância EC2
+## Cria uma instância EC2 com a AMI Debian 12, associada ao par de chaves e ao security group.
+```terraform
 resource "aws_instance" "debian_ec2" {
   description = "Cria uma instância EC2 com a AMI Debian 12, associada ao par de chaves e ao security group."
   ami             = data.aws_ami.debian12.id
@@ -169,18 +199,24 @@ resource "aws_instance" "debian_ec2" {
   subnet_id       = aws_subnet.main_subnet.id
   key_name        = aws_key_pair.ec2_key_pair.key_name
   security_groups = [aws_security_group.main_sg.name]
+```
 
   # Configuração para associar IP público à instância
+  ```terraform
   associate_public_ip_address = true
+```
 
   # Configuração do volume de armazenamento
+  ```terraform
   root_block_device {
     volume_size           = 20
     volume_type           = "gp2"
     delete_on_termination = true
   }
+```
 
   # Script de inicialização da instância (Instalação do Nginx e desabilitação de login como root via SSH)
+  ```terraform
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
@@ -196,87 +232,56 @@ resource "aws_instance" "debian_ec2" {
     Name = "${var.projeto}-${var.candidato}-ec2"
   }
 }
-
+```
 # Saídas do Terraform
 
+
 # A chave privada gerada para acessar a instância EC2 será retornada como uma saída sensível.
+```terraform
 output "private_key" {
   description = "Chave privada para acessar a instância EC2"
   value       = tls_private_key.ec2_key.private_key_pem
   sensitive   = true
 }
-
+```
 # O IP público da instância EC2 será retornado como uma saída.
+## Endereço IP público da instância EC2
+```terraform
 output "ec2_public_ip" {
   description = "Endereço IP público da instância EC2"
   value       = aws_instance.debian_ec2.public_ip
 }
+```
+
 
 # MODIFICAÇÃO E MELHORIA DO CODIGO TERRAFORM, a descrição técnica solicitada na Tarefa 2, explicando as melhorias implementadas e justificando suas escolhas.
 
-# Provider AWS
-provider "aws" {
-  description = "Provider da AWS que configura a região para provisionar os recursos."
-  region = "us-east-1"  # A região foi configurada para 'us-east-1' com base em sua proximidade geográfica e performance adequada.
-}
-
-# Variáveis
-
-variable "projeto" {
-  description = "Nome do Projeto. O valor padrão é VExpenses."
-  type        = string
-  default     = "VExpenses"
-}
-
-variable "candidato" {
-  description = "Nome do Candidato. O valor padrão é Emanuel Neemias Nerys Frutuoso."
-  type        = string
-  default     = "Emanuel Neemias Nerys Frutuoso"
-}
-
-variable "cidr_vpc" {
-  description = "CIDR block da VPC. O valor padrão é 10.0.0.0/16."
-  type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "cidr_subnet" {
-  description = "CIDR block da Subnet. O valor padrão é 10.0.1.0/24."
-  type        = string
-  default     = "10.0.1.0/24"
-}
-
-variable "zone" {
-  description = "Zona de Disponibilidade. O valor padrão é us-east-1a."
-  type        = string
-  default     = "us-east-1a"
-}
-
-variable "ssh_allowed_ip" {
-  description = "IP autorizado para SSH (Exemplo: 0.0.0.0/0 para permitir qualquer IP). O valor padrão é 0.0.0.0/0."
-  type        = string
-  default     = "0.0.0.0/0"  # Permitir qualquer IP, para testes. Em produção, deve ser restrito a um IP específico por segurança.
-}
-
-# Melhorias:
 # A configuração da variável `ssh_allowed_ip` é flexível e pode ser alterada facilmente conforme as necessidades de segurança.
 # A escolha de 0.0.0.0/0 como padrão facilita os testes, mas deve ser ajustada antes de ir para produção.
 
+
 # Gerando chave privada RSA
+## Gera uma chave privada RSA que será utilizada para acessar a instância EC2 via SSH.
+```terraform
 resource "tls_private_key" "ec2_key" {
   description = "Gera uma chave privada RSA que será utilizada para acessar a instância EC2 via SSH."
   algorithm = "RSA"
   rsa_bits  = 2048  # A escolha do algoritmo RSA com 2048 bits é uma boa prática de segurança para garantir uma chave forte.
 }
+```
 
 # Criando o par de chaves para a EC2
+## Cria um par de chaves para a instância EC2, utilizando a chave pública gerada anteriormente.
+```terraform
 resource "aws_key_pair" "ec2_key_pair" {
   description = "Cria um par de chaves para a instância EC2, utilizando a chave pública gerada anteriormente."
   key_name   = "${var.projeto}-${var.candidato}-key"  # Nome da chave gerada com base no projeto e candidato, facilitando a identificação.
   public_key = tls_private_key.ec2_key.public_key_openssh
 }
-
+```
 # Criando a VPC (Virtual Private Cloud)
+## Cria uma VPC para isolar a rede. A VPC estará associada ao CIDR block configurado.
+```terraform
 resource "aws_vpc" "main_vpc" {
   description = "Cria uma VPC para isolar a rede. A VPC estará associada ao CIDR block configurado."
   cidr_block           = var.cidr_vpc
@@ -287,8 +292,11 @@ resource "aws_vpc" "main_vpc" {
     Name = "${var.projeto}-${var.candidato}-vpc"
   }
 }
+```
 
 # Criando a Subnet
+## Cria uma Subnet dentro da VPC. A Subnet será associada a uma zona de disponibilidade.
+```terraform
 resource "aws_subnet" "main_subnet" {
   description = "Cria uma Subnet dentro da VPC. A Subnet será associada a uma zona de disponibilidade."
   vpc_id            = aws_vpc.main_vpc.id
@@ -299,8 +307,11 @@ resource "aws_subnet" "main_subnet" {
     Name = "${var.projeto}-${var.candidato}-subnet"
   }
 }
+```
 
 # Criando o Internet Gateway (IGW)
+## Cria um gateway de internet para a VPC, permitindo a comunicação com a internet.
+```terraform
 resource "aws_internet_gateway" "main_igw" {
   description = "Cria um gateway de internet para a VPC, permitindo a comunicação com a internet."
   vpc_id = aws_vpc.main_vpc.id
@@ -309,8 +320,10 @@ resource "aws_internet_gateway" "main_igw" {
     Name = "${var.projeto}-${var.candidato}-igw"
   }
 }
-
+```
 # Criando a Tabela de Roteamento
+## Cria uma tabela de roteamento associada à VPC. Define as rotas de tráfego para a comunicação externa. A rota padrão para tráfego de saída através do Internet Gateway
+```terraform
 resource "aws_route_table" "main_route_table" {
   description = "Cria uma tabela de roteamento associada à VPC. Define as rotas de tráfego para a comunicação externa."
   vpc_id = aws_vpc.main_vpc.id
@@ -324,21 +337,27 @@ resource "aws_route_table" "main_route_table" {
     Name = "${var.projeto}-${var.candidato}-route_table"
   }
 }
-
+```
 # Associando a Tabela de Roteamento à Subnet
+## Associa a tabela de roteamento à subnet. A associação permite que a subnet use a tabela de roteamento definida.
+```terraform
 resource "aws_route_table_association" "main_association" {
   description = "Associa a tabela de roteamento à subnet. A associação permite que a subnet use a tabela de roteamento definida."
   subnet_id      = aws_subnet.main_subnet.id
   route_table_id = aws_route_table.main_route_table.id
 }
-
+```
 # Criando o Security Group
+## Cria um Security Group para controlar o tráfego da instância EC2. Permite SSH de um IP específico e todo o tráfego de saída.
+```terraform
 resource "aws_security_group" "main_sg" {
   description = "Cria um Security Group para controlar o tráfego da instância EC2. Permite SSH de um IP específico e todo o tráfego de saída."
   name        = "${var.projeto}-${var.candidato}-sg"
   vpc_id      = aws_vpc.main_vpc.id
-
+```
   # Regras de entrada: SSH restrito a um IP específico
+  ## A regra de SSH permite acesso a partir de um IP específico para aumentar a segurança.
+  ```terraform
   ingress {
     description      = "Allow SSH from any IP"
     from_port        = 22
@@ -347,8 +366,9 @@ resource "aws_security_group" "main_sg" {
     cidr_blocks      = [var.ssh_allowed_ip]  # A regra de SSH permite acesso a partir de um IP específico para aumentar a segurança.
     ipv6_cidr_blocks = ["::/0"]
   }
-
+```
   # Regras de saída: Permitir todo tráfego de saída
+  ```terraform
   egress {
     description      = "Allow all outbound traffic"
     from_port        = 0
@@ -362,8 +382,10 @@ resource "aws_security_group" "main_sg" {
     Name = "${var.projeto}-${var.candidato}-sg"
   }
 }
-
+```
 # Buscando a AMI do Debian 12 mais recente
+## Busca a AMI mais recente do Debian 12 para ser usada na instância EC2.
+```terraform
 data "aws_ami" "debian12" {
   description = "Busca a AMI mais recente do Debian 12 para ser usada na instância EC2."
   most_recent = true
@@ -380,8 +402,10 @@ data "aws_ami" "debian12" {
 
   owners = ["679593333241"]  # ID do proprietário da AMI, garantindo que a AMI buscada é do Debian 12.
 }
-
+```
 # Criando a instância EC2
+## Cria uma instância EC2 com a AMI Debian 12, associada ao par de chaves e ao security group. A instância recebe um IP público para acesso remoto via SSH.
+```terraform
 resource "aws_instance" "debian_ec2" {
   description = "Cria uma instância EC2 com a AMI Debian 12, associada ao par de chaves e ao security group."
   ami             = data.aws_ami.debian12.id
@@ -391,15 +415,18 @@ resource "aws_instance" "debian_ec2" {
   security_groups = [aws_security_group.main_sg.name]
 
   associate_public_ip_address = true  # A instância recebe um IP público para acesso remoto via SSH.
-
+```
   # Configuração do volume de armazenamento
+  ##  O volume será deletado quando a instância for terminada, para evitar custos desnecessários.
+  ```terraform
   root_block_device {
     volume_size           = 20
     volume_type           = "gp2"
     delete_on_termination = true  # O volume será deletado quando a instância for terminada, para evitar custos desnecessários.
   }
-
+```
   # Script de inicialização da instância (Instalação do Nginx e desabilitação de login como root via SSH)
+  ```terraform
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
@@ -415,22 +442,28 @@ resource "aws_instance" "debian_ec2" {
     Name = "${var.projeto}-${var.candidato}-ec2"
   }
 }
-
+```
 # Saídas do Terraform
 
+
 # A chave privada gerada para acessar a instância EC2 será retornada como uma saída sensível.
+```terraform
 output "private_key" {
   description = "Chave privada para acessar a instância EC2"
   value       = tls_private_key.ec2_key.private_key_pem
   sensitive   = true  # A chave é sensível, por isso é marcada como tal, para não ser exibida inadvertidamente.
 }
+```
 
 # O IP público da instância EC2 será retornado como uma saída.
+```terraform
 output "ec2_public_ip" {
   description = "Endereço IP público da instânci
+```
 
 # INSTRUCOES DE USO, PASSOS NECESSARIOS PARA INICIALIAZAR E APLICAR A CONFIGURAÇÃO TERRAFORM
 # PRE REQUISITOS
+
 1 -Instalar a ferramenta Terraform.
 2- Ter uma conta na AWS
 3- AWS CLI, a instalação do AWS CLI pode facilitar a configuração das credencias da AWS
@@ -448,7 +481,7 @@ comando: TERRAFORM PLAN: Esse comando ira gerar e mostrar um plano detalhado com
 # VERIFICANDO A INFRAESTRUTURA CRIADA
 comando: TERRAFORM APPLY: Cria, altera ou destroi recursos da AWS conforme especificado no arquivo de configuração
 
-# DESTROINDO A INFRAESTRUTUTRA
+# DESTRUINDO A INFRAESTRUTURA
 comando: TERRAFORM DESTROY: caso queira remover os recursos criados para evitar custos ou para teste
 
 
