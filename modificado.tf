@@ -4,6 +4,7 @@ provider "aws" {
 }
 
 # Variáveis
+
 variable "projeto" {
   description = "Nome do Projeto. O valor padrão é VExpenses."
   type        = string

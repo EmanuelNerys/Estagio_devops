@@ -14,37 +14,44 @@ variable "projeto" {
   default     = "VExpenses"
 }
 ```
-
+```terraform
 variable "candidato" {
   description = "Nome do Candidato. O valor padrão é Emanuel Neemias Nerys Frutuoso."
   type        = string
   default     = "Emanuel Neemias Nerys Frutuoso"
 }
-.
+```
+```terraform
 variable "cidr_vpc" {
   description = "CIDR block da VPC. O valor padrão é 10.0.0.0/16."
   type        = string
   default     = "10.0.0.0/16"
 }
+```
 ## CIDR block da Subnet. O valor padrão é 10.0.1.0/24.
+```terraform
 variable "cidr_subnet" {
   description = "CIDR block da Subnet. O valor padrão é 10.0.1.0/24."
   type        = string
   default     = "10.0.1.0/24"
-}
+} 
+```
 ## Zona de Disponibilidade. O valor padrão é us-east-1a.
+```terraform
 variable "zone" {
   description = "Zona de Disponibilidade. O valor padrão é us-east-1a."
   type        = string
   default     = "us-east-1a"
 }
+```
 ## IP autorizado para SSH (Exemplo: 0.0.0.0/0 para permitir qualquer IP). O valor padrão é 0.0.0.0/0.
+```terraform
 variable "ssh_allowed_ip" {
   description = "IP autorizado para SSH (Exemplo: 0.0.0.0/0 para permitir qualquer IP). O valor padrão é 0.0.0.0/0."
   type        = string
   default     = "0.0.0.0/0"  # Permitir qualquer IP, para testes
 }
-
+```
 # Gerando chave privada RSA
 ## Gera uma chave privada RSA para ser usada no acesso SSH à instância EC2
 ```terraform
@@ -465,7 +472,9 @@ output "ec2_public_ip" {
 # PRE REQUISITOS
 
 1 -Instalar a ferramenta Terraform.
+
 2- Ter uma conta na AWS
+
 3- AWS CLI, a instalação do AWS CLI pode facilitar a configuração das credencias da AWS
 
 # CONFIGURAÇÃO DAS CREDENCIAIS
@@ -473,15 +482,31 @@ comando: AWS CONFIGURE: Esse comando tambem ira pedir o AWS Access Key ID, AWS S
 
 
 # INICIALIZANDO O AMBIENTE TERRAFORM
-comando: TERRAFORM INIT: configura o diretorio de trabalho para o terraform, verifica dependencias de modulo
+comando:
+
+ TERRAFORM INIT: 
+ 
+ configura o diretorio de trabalho para o terraform, verifica dependencias de modulo
 
 # VISUALIZAR O PLANO DE EXECUÇÃO
-comando: TERRAFORM PLAN: Esse comando ira gerar e mostrar um plano detalhado com as mudancas que serao feitas, sem aplicar efetivamente as modificações
+comando:
+
+TERRAFORM PLAN: 
+ 
+ Esse comando ira gerar e mostrar um plano detalhado com as mudancas que serao feitas, sem aplicar efetivamente as modificações
 
 # VERIFICANDO A INFRAESTRUTURA CRIADA
-comando: TERRAFORM APPLY: Cria, altera ou destroi recursos da AWS conforme especificado no arquivo de configuração
+comando:
+
+ TERRAFORM APPLY: 
+ 
+ Cria, altera ou destroi recursos da AWS conforme especificado no arquivo de configuração
 
 # DESTRUINDO A INFRAESTRUTURA
-comando: TERRAFORM DESTROY: caso queira remover os recursos criados para evitar custos ou para teste
+comando: 
+
+TERRAFORM DESTROY: 
+
+caso queira remover os recursos criados para evitar custos ou para teste
 
 
